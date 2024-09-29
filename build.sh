@@ -1077,6 +1077,26 @@ if [ "${BUILD_INITRAMFS}" = "1" -o  -n "${IN_KERNEL_MODULES}" ]; then
         INSTALL_MOD_PATH=${MODULES_STAGING_DIR} "${MAKE_ARGS[@]}" modules_install)
 fi
 
+
+if [ -n "${MODULES_ORDER}" ]; then
+  echo "========================================================"
+  echo " Checking the list of modules:"
+  if ! diff -u "${KERNEL_DIR}/${MODULES_ORDER}" "${OUT_DIR}/modules.order"; then
+    echo "ERROR: modules list out of date" >&2
+    echo "Update it with:" >&2
+    echo "cp ${OUT_DIR}/modules.order ${KERNEL_DIR}/${MODULES_ORDER}" >&2
+  fi
+fi
+
+if [ "${KMI_SYMBOL_LIST_STRICT_MODE}" = "1" ]; then
+  echo "========================================================"
+  echo " Comparing the KMI and the symbol lists:"
+  set -x
+  ${ROOT_DIR}/build/abi/compare_to_symbol_list "${OUT_DIR}/Module.symvers" \
+                                               "${OUT_DIR}/abi_symbollist.raw"
+  set +x
+fi
+
 if [[ -z "${SKIP_EXT_MODULES}" ]] && [[ -n "${EXT_MODULES_MAKEFILE}" ]]; then
   echo "========================================================"
   echo " Building and installing external modules using ${EXT_MODULES_MAKEFILE}"
